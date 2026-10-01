@@ -36,272 +36,269 @@ import net.minecraftforge.fml.common.Mod;
 import org.lwjgl.glfw.GLFW;
 
 @Mod.EventBusSubscriber(
-modid = "shieldstatus",
-bus = Mod.EventBusSubscriber.Bus.FORGE,
-value = Dist.CLIENT
+        modid = "shieldstatus",
+        bus = Mod.EventBusSubscriber.Bus.FORGE,
+        value = Dist.CLIENT
 )
 public final class ClientEvents {
 
-```
-private static final ResourceLocation WHITE =
-        new ResourceLocation(
-                "minecraft",
-                "textures/block/white_concrete.png"
-        );
-
-private static final KeyBinding TOGGLE = new KeyBinding(
-        "key.shieldstatus.toggle",
-        KeyConflictContext.IN_GAME,
-        InputMappings.getInputByCode(GLFW.GLFW_KEY_G, 0),
-        "key.categories.shieldstatus"
-);
-
-static {
-    ClientRegistry.registerKeyBinding(TOGGLE);
-}
-
-private ClientEvents() {
-}
-
-@SubscribeEvent
-public static void onKey(InputEvent.KeyInputEvent event) {
-    while (TOGGLE.consumeClick()) {
-        boolean value = !ClientConfig.ENABLED.get();
-        ClientConfig.ENABLED.set(value);
-
-        ClientPlayerEntity player = Minecraft.getInstance().player;
-
-        if (player != null) {
-            player.displayClientMessage(
-                    new StringTextComponent(
-                            "Shield Status: " + (value ? "ON" : "OFF")
-                    ),
-                    true
+    private static final ResourceLocation WHITE =
+            new ResourceLocation(
+                    "minecraft",
+                    "textures/block/white_concrete.png"
             );
+
+    private static final KeyBinding TOGGLE = new KeyBinding(
+            "key.shieldstatus.toggle",
+            KeyConflictContext.IN_GAME,
+            InputMappings.Type.KEYSYM.getOrCreate(GLFW.GLFW_KEY_G),
+            "key.categories.shieldstatus"
+    );
+
+    static {
+        ClientRegistry.registerKeyBinding(TOGGLE);
+    }
+
+    private ClientEvents() {
+    }
+
+    @SubscribeEvent
+    public static void onKey(InputEvent.KeyInputEvent event) {
+        while (TOGGLE.consumeClick()) {
+            boolean value = !ClientConfig.ENABLED.get();
+            ClientConfig.ENABLED.set(value);
+
+            ClientPlayerEntity player = Minecraft.getInstance().player;
+
+            if (player != null) {
+                player.displayClientMessage(
+                        new StringTextComponent(
+                                "Shield Status: " + (value ? "ON" : "OFF")
+                        ),
+                        true
+                );
+            }
         }
     }
-}
 
-@SubscribeEvent
-public static void render(RenderPlayerEvent.Post event) {
-    if (!ClientConfig.ENABLED.get()) {
-        return;
-    }
+    @SubscribeEvent
+    public static void render(RenderPlayerEvent.Post event) {
+        if (!ClientConfig.ENABLED.get()) {
+            return;
+        }
 
-    PlayerEntity player = event.getPlayer();
+        PlayerEntity player = event.getPlayer();
 
-    if (player.isSpectator()) {
-        return;
-    }
+        if (player.isSpectator()) {
+            return;
+        }
 
-    if (player != Minecraft.getInstance().player) {
-        return;
-    }
+        if (player != Minecraft.getInstance().player) {
+            return;
+        }
 
-    HandSide side = shieldSide(player);
+        HandSide side = shieldSide(player);
 
-    if (side == null) {
-        return;
-    }
+        if (side == null) {
+            return;
+        }
 
-    MatrixStack matrix = event.getMatrixStack();
+        MatrixStack matrix = event.getMatrixStack();
 
-    matrix.pushPose();
+        matrix.pushPose();
 
-    matrix.translate(
-            side == HandSide.LEFT ? -0.30D : 0.30D,
-            1.02D,
-            -0.34D
-    );
-
-    draw(player, matrix, event.getBuffers());
-
-    matrix.popPose();
-}
-
-private static HandSide shieldSide(PlayerEntity player) {
-    if (isShield(player.getItemInHand(Hand.MAIN_HAND))) {
-        return player.getMainArm();
-    }
-
-    if (isShield(player.getItemInHand(Hand.OFF_HAND))) {
-        return player.getMainArm() == HandSide.LEFT
-                ? HandSide.RIGHT
-                : HandSide.LEFT;
-    }
-
-    return null;
-}
-
-private static boolean isShield(ItemStack stack) {
-    return !stack.isEmpty()
-            && stack.getItem() instanceof ShieldItem;
-}
-
-private static void draw(
-        PlayerEntity player,
-        MatrixStack matrix,
-        IRenderTypeBuffer buffers
-) {
-    boolean disabled =
-            player.getCooldowns().isOnCooldown(Items.SHIELD);
-
-    float cooldown =
-            player.getCooldowns()
-                    .getCooldownPercent(Items.SHIELD, 0.0F);
-
-    cooldown = MathHelper.clamp(
-            cooldown,
-            0.0F,
-            1.0F
-    );
-
-    int red;
-    int green;
-    int blue;
-
-    if (ClientConfig.INTERPOLATE.get() && disabled) {
-        float progress = 1.0F - cooldown;
-
-        red = mix(
-                ClientConfig.DISABLED_RED.get(),
-                ClientConfig.ENABLED_RED.get(),
-                progress
+        matrix.translate(
+                side == HandSide.LEFT ? -0.30D : 0.30D,
+                1.02D,
+                -0.34D
         );
 
-        green = mix(
-                ClientConfig.DISABLED_GREEN.get(),
-                ClientConfig.ENABLED_GREEN.get(),
-                progress
-        );
+        draw(player, matrix, event.getBuffers());
 
-        blue = mix(
-                ClientConfig.DISABLED_BLUE.get(),
-                ClientConfig.ENABLED_BLUE.get(),
-                progress
-        );
-    } else {
-        red = disabled
-                ? ClientConfig.DISABLED_RED.get()
-                : ClientConfig.ENABLED_RED.get();
-
-        green = disabled
-                ? ClientConfig.DISABLED_GREEN.get()
-                : ClientConfig.ENABLED_GREEN.get();
-
-        blue = disabled
-                ? ClientConfig.DISABLED_BLUE.get()
-                : ClientConfig.ENABLED_BLUE.get();
+        matrix.popPose();
     }
 
-    RenderSystem.enableBlend();
+    private static HandSide shieldSide(PlayerEntity player) {
+        if (isShield(player.getItemInHand(Hand.MAIN_HAND))) {
+            return player.getMainArm();
+        }
 
-    RenderSystem.blendFunc(
-            GlStateManager.SourceFactor.SRC_ALPHA,
-            GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA
-    );
+        if (isShield(player.getItemInHand(Hand.OFF_HAND))) {
+            return player.getMainArm() == HandSide.LEFT
+                    ? HandSide.RIGHT
+                    : HandSide.LEFT;
+        }
 
-    RenderSystem.depthMask(false);
+        return null;
+    }
 
-    IVertexBuilder builder =
-            buffers.getBuffer(
-                    RenderType.entityTranslucent(WHITE)
+    private static boolean isShield(ItemStack stack) {
+        return !stack.isEmpty()
+                && stack.getItem() instanceof ShieldItem;
+    }
+
+    private static void draw(
+            PlayerEntity player,
+            MatrixStack matrix,
+            IRenderTypeBuffer buffers
+    ) {
+        boolean disabled =
+                player.getCooldowns().isOnCooldown(Items.SHIELD);
+
+        float cooldown =
+                player.getCooldowns()
+                        .getCooldownPercent(Items.SHIELD, 0.0F);
+
+        cooldown = MathHelper.clamp(
+                cooldown,
+                0.0F,
+                1.0F
+        );
+
+        int red;
+        int green;
+        int blue;
+
+        if (ClientConfig.INTERPOLATE.get() && disabled) {
+            float progress = 1.0F - cooldown;
+
+            red = mix(
+                    ClientConfig.DISABLED_RED.get(),
+                    ClientConfig.ENABLED_RED.get(),
+                    progress
             );
 
-    Matrix4f pose = matrix.last().pose();
+            green = mix(
+                    ClientConfig.DISABLED_GREEN.get(),
+                    ClientConfig.ENABLED_GREEN.get(),
+                    progress
+            );
 
-    quad(
-            builder,
-            pose,
-            -0.11F,
-            0.22F,
-            0.11F,
-            0.12F,
-            red,
-            green,
-            blue,
-            90
-    );
+            blue = mix(
+                    ClientConfig.DISABLED_BLUE.get(),
+                    ClientConfig.ENABLED_BLUE.get(),
+                    progress
+            );
+        } else {
+            red = disabled
+                    ? ClientConfig.DISABLED_RED.get()
+                    : ClientConfig.ENABLED_RED.get();
 
-    quad(
-            builder,
-            pose,
-            -0.20F,
-            0.12F,
-            0.20F,
-            -0.14F,
-            red,
-            green,
-            blue,
-            90
-    );
+            green = disabled
+                    ? ClientConfig.DISABLED_GREEN.get()
+                    : ClientConfig.ENABLED_GREEN.get();
 
-    quad(
-            builder,
-            pose,
-            -0.11F,
-            -0.14F,
-            0.11F,
-            -0.22F,
-            red,
-            green,
-            blue,
-            90
-    );
+            blue = disabled
+                    ? ClientConfig.DISABLED_BLUE.get()
+                    : ClientConfig.ENABLED_BLUE.get();
+        }
 
-    RenderSystem.depthMask(true);
-    RenderSystem.disableBlend();
-}
+        RenderSystem.enableBlend();
 
-private static int mix(
-        int a,
-        int b,
-        float factor
-) {
-    return MathHelper.clamp(
-            Math.round(a + (b - a) * factor),
-            0,
-            255
-    );
-}
+        RenderSystem.blendFunc(
+                GlStateManager.SourceFactor.SRC_ALPHA,
+                GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA
+        );
 
-private static void quad(
-        IVertexBuilder builder,
-        Matrix4f pose,
-        float left,
-        float top,
-        float right,
-        float bottom,
-        int red,
-        int green,
-        int blue,
-        int alpha
-) {
-    vertex(builder, pose, left, top, red, green, blue, alpha);
-    vertex(builder, pose, right, top, red, green, blue, alpha);
-    vertex(builder, pose, right, bottom, red, green, blue, alpha);
-    vertex(builder, pose, left, bottom, red, green, blue, alpha);
-}
+        RenderSystem.depthMask(false);
 
-private static void vertex(
-        IVertexBuilder builder,
-        Matrix4f pose,
-        float x,
-        float y,
-        int red,
-        int green,
-        int blue,
-        int alpha
-) {
-    builder
-            .vertex(pose, x, y, 0.0F)
-            .color(red, green, blue, alpha)
-            .uv(0.0F, 0.0F)
-            .overlayCoords(OverlayTexture.NO_OVERLAY)
-            .uv2(0xF000F0)
-            .normal(0.0F, 0.0F, 1.0F)
-            .endVertex();
-}
+        IVertexBuilder builder =
+                buffers.getBuffer(
+                        RenderType.entityTranslucent(WHITE)
+                );
 
+        Matrix4f pose = matrix.last().pose();
 
+        quad(
+                builder,
+                pose,
+                -0.11F,
+                0.22F,
+                0.11F,
+                0.12F,
+                red,
+                green,
+                blue,
+                90
+        );
+
+        quad(
+                builder,
+                pose,
+                -0.20F,
+                0.12F,
+                0.20F,
+                -0.14F,
+                red,
+                green,
+                blue,
+                90
+        );
+
+        quad(
+                builder,
+                pose,
+                -0.11F,
+                -0.14F,
+                0.11F,
+                -0.22F,
+                red,
+                green,
+                blue,
+                90
+        );
+
+        RenderSystem.depthMask(true);
+        RenderSystem.disableBlend();
+    }
+
+    private static int mix(
+            int a,
+            int b,
+            float factor
+    ) {
+        return MathHelper.clamp(
+                Math.round(a + (b - a) * factor),
+                0,
+                255
+        );
+    }
+
+    private static void quad(
+            IVertexBuilder builder,
+            Matrix4f pose,
+            float left,
+            float top,
+            float right,
+            float bottom,
+            int red,
+            int green,
+            int blue,
+            int alpha
+    ) {
+        vertex(builder, pose, left, top, red, green, blue, alpha);
+        vertex(builder, pose, right, top, red, green, blue, alpha);
+        vertex(builder, pose, right, bottom, red, green, blue, alpha);
+        vertex(builder, pose, left, bottom, red, green, blue, alpha);
+    }
+
+    private static void vertex(
+            IVertexBuilder builder,
+            Matrix4f pose,
+            float x,
+            float y,
+            int red,
+            int green,
+            int blue,
+            int alpha
+    ) {
+        builder
+                .vertex(pose, x, y, 0.0F)
+                .color(red, green, blue, alpha)
+                .uv(0.0F, 0.0F)
+                .overlayCoords(OverlayTexture.NO_OVERLAY)
+                .uv2(0xF000F0)
+                .normal(0.0F, 0.0F, 1.0F)
+                .endVertex();
+    }
 }
