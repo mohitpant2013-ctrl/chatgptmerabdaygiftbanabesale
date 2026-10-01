@@ -1,0 +1,36 @@
+buildscript {
+    repositories {
+        maven { url = 'https://maven.minecraftforge.net' }
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle:5.1.+' 
+    }
+}
+
+apply plugin: 'net.minecraftforge.gradle'
+
+version = '1.0.0-1.16.5'
+group = 'com.walksy.shieldstatus'
+archivesBaseName = 'ShieldStatus-1.16.5-Forge'
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(8)
+
+minecraft {
+    mappings channel: 'official', version: '1.16.5'
+    runs {
+        client {
+            workingDirectory project.file('run')
+            property 'forge.logging.console.level', 'info'
+            mods { shieldstatus { source sourceSets.main } }
+        }
+    }
+}
+
+repositories { mavenCentral() }
+
+dependencies { minecraft 'net.minecraftforge:forge:1.16.5-36.2.39' }
+
+jar { manifest { attributes(['Specification-Title':'Shield Status', 'Specification-Vendor':'Walksy/Port', 'Specification-Version':'1', 'Implementation-Title':project.name, 'Implementation-Version':project.version, 'Implementation-Vendor':'ShieldStatus Port']) } }
+
+jar.finalizedBy('reobfJar')

@@ -1,0 +1,10 @@
+modLoader="javafml"
+loaderVersion="[36,)"
+license="MIT"
+[[mods]]
+modId="shieldstatus"
+version="1.0.0-1.16.5"
+displayName="Shield Status"
+displayURL="https://github.com/Walksy/ShieldStatus"
+authors="Walksy; reiop / hinoob; 1.16.5 Forge port"
+description='''Shows a compact color status overlay for your held shield. Green means active; red means temporarily disabled. Client-side.'''
