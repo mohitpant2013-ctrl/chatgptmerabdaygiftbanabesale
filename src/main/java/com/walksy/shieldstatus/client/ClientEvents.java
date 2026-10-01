@@ -1,3 +1,4 @@
+```java
 package com.walksy.shieldstatus.client;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
@@ -43,12 +44,15 @@ import org.lwjgl.glfw.GLFW;
 public final class ClientEvents {
 
     private static final ResourceLocation WHITE =
-            new ResourceLocation("minecraft", "textures/block/white_concrete.png");
+            new ResourceLocation(
+                    "minecraft",
+                    "textures/block/white_concrete.png"
+            );
 
     private static final KeyBinding TOGGLE = new KeyBinding(
             "key.shieldstatus.toggle",
             KeyConflictContext.IN_GAME,
-            InputMappings.Type.KEYSYM.getOrMakeInput(GLFW.GLFW_KEY_G),
+            InputMappings.getInputByCode(GLFW.GLFW_KEY_G, 0),
             "key.categories.shieldstatus"
     );
 
@@ -122,14 +126,17 @@ public final class ClientEvents {
         }
 
         if (isShield(player.getItemInHand(Hand.OFF_HAND))) {
-            return player.getMainArm().opposite();
+            return player.getMainArm() == HandSide.LEFT
+                    ? HandSide.RIGHT
+                    : HandSide.LEFT;
         }
 
         return null;
     }
 
     private static boolean isShield(ItemStack stack) {
-        return !stack.isEmpty() && stack.getItem() instanceof ShieldItem;
+        return !stack.isEmpty()
+                && stack.getItem() instanceof ShieldItem;
     }
 
     private static void draw(
@@ -141,9 +148,14 @@ public final class ClientEvents {
                 player.getCooldowns().isOnCooldown(Items.SHIELD);
 
         float cooldown =
-                player.getCooldowns().getCooldownPercent(Items.SHIELD, 0.0F);
+                player.getCooldowns()
+                        .getCooldownPercent(Items.SHIELD, 0.0F);
 
-        cooldown = MathHelper.clamp(cooldown, 0.0F, 1.0F);
+        cooldown = MathHelper.clamp(
+                cooldown,
+                0.0F,
+                1.0F
+        );
 
         int red;
         int green;
@@ -193,10 +205,11 @@ public final class ClientEvents {
         RenderSystem.depthMask(false);
 
         IVertexBuilder builder =
-                buffers.getBuffer(RenderType.entityTranslucent(WHITE));
+                buffers.getBuffer(
+                        RenderType.entityTranslucent(WHITE)
+                );
 
-        Matrix4f pose =
-                matrix.last().pose();
+        Matrix4f pose = matrix.last().pose();
 
         quad(
                 builder,
@@ -241,7 +254,11 @@ public final class ClientEvents {
         RenderSystem.disableBlend();
     }
 
-    private static int mix(int a, int b, float factor) {
+    private static int mix(
+            int a,
+            int b,
+            float factor
+    ) {
         return MathHelper.clamp(
                 Math.round(a + (b - a) * factor),
                 0,
@@ -261,10 +278,49 @@ public final class ClientEvents {
             int blue,
             int alpha
     ) {
-        vertex(builder, pose, left, top, red, green, blue, alpha);
-        vertex(builder, pose, right, top, red, green, blue, alpha);
-        vertex(builder, pose, right, bottom, red, green, blue, alpha);
-        vertex(builder, pose, left, bottom, red, green, blue, alpha);
+        vertex(
+                builder,
+                pose,
+                left,
+                top,
+                red,
+                green,
+                blue,
+                alpha
+        );
+
+        vertex(
+                builder,
+                pose,
+                right,
+                top,
+                red,
+                green,
+                blue,
+                alpha
+        );
+
+        vertex(
+                builder,
+                pose,
+                right,
+                bottom,
+                red,
+                green,
+                blue,
+                alpha
+        );
+
+        vertex(
+                builder,
+                pose,
+                left,
+                bottom,
+                red,
+                green,
+                blue,
+                alpha
+        );
     }
 
     private static void vertex(
@@ -287,3 +343,4 @@ public final class ClientEvents {
                 .endVertex();
     }
 }
+```
